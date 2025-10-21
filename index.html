@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Youware App</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Framer Motion CDN -->
+  <script src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
+  <!-- Lucide React Icons CDN -->
+  <script src="https://unpkg.com/lucide-react/dist/lucide-react.umd.js"></script>
+</head>
+<body class="font-sans bg-white text-black">
+  <div id="root"></div>
+
+  <script type="text/javascript">
+    const { useState } = React;
+    const { motion, AnimatePresence } = window.FramerMotion;
+    const { Download, Loader2 } = window.LucideReact;
+
+    function App() {
+      const [url, setUrl] = useState("");
+      const [status, setStatus] = useState("idle"); // "idle" | "loading" | "success" | "error"
+      const [error, setError] = useState(null);
+      const [videoData, setVideoData] = useState(null);
+
+      const API_ENDPOINT = "https://www.tikwm.com/api/";
+
+      const handleDownload = async (e) => {
+        e.preventDefault();
+        if (!url.trim()) {
+          setError("Please paste a TikTok link.");
+          setStatus("error");
+          return;
+        }
+        setStatus("loading");
+        setError(null);
+        setVideoData(null);
+        try {
+          const res = await fetch(${API_ENDPOINT}?url=${encodeURIComponent(url.trim())});
+          if (!res.ok) throw new Error("Failed to fetch video.");
+          const data = await res.json();
+          if (data.code !== 0 || !data.data?.play) throw new Error(data.msg || "Video not found.");
+          setVideoData(data.data);
+          setStatus("success");
+        } catch (err) {
+          setError(err.message || "Unexpected error.");
+          setStatus("error");
+        }
+      };
+
+      const isLoading = status === "loading";
+
+      return React.createElement("div", { className: "min-h-screen bg-white text-black p-6" },
+        React.createElement("h1", { className: "text-2xl font-bold mb-4" }, "Download TikTok Videos"),
+        React.createElement("form", { onSubmit: handleDownload, className: "flex gap-2 mb-4" },
+          React.createElement("input", {
+            type: "text",
+            placeholder: "Paste TikTok URL...",
+            value: url,
+            onChange: (e) => setUrl(e.target.value),
+            className: "flex-1 border px-3 py-2 rounded"
+          }),
+          React.createElement("button", { type: "submit", className: "bg-blue-600 text-white px-4 py-2 rounded" },
+            isLoading ? "Processing..." : "Download"
+          )
+        ),
+        status === "error" && error && React.createElement("p", { className: "text-red-600" }, error),
+        status === "success" && videoData && React.createElement("div", { className: "mt-4" },
+          React.createElement("p", null, videoData.title),
+          React.createElement("a", { href: videoData.play, target: "_blank", className: "text-blue-700 underline" }, "Download Now")
+        )
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
